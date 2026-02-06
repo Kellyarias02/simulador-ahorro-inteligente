@@ -1,15 +1,11 @@
 @import "tailwindcss";
 
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #0A2E57;      /* header azul oscuro */
+  --color-hover-text: #93c5fd;   /* hover links azul claro */
 }
 
 @media (prefers-color-scheme: dark) {
