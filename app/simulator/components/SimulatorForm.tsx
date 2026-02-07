@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import products from "@/data/products.json";
 
 // Formato moneda
@@ -11,12 +11,14 @@ const formatCurrency = (value: number) => {
 
 export default function SimulatorForm() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+
   const productId = searchParams.get("product");
 
   // Buscar producto en el JSON
   const product = products.find((p) => p.id === productId);
 
-  const interestRate = product?.interestRate ?? 5; // tasa por defecto
+  const interestRate = product?.interestRate ?? 5;
   const productName = product?.name ?? "Ahorro digital";
   const minAmount = product?.minAmount ?? 700000;
 
@@ -92,7 +94,6 @@ export default function SimulatorForm() {
       return;
     }
 
-    // tasa mensual desde tasa anual
     const monthlyRate = (interestRate / 100) / 12;
     const currentRateDesc = `anual del ${interestRate}% (${(monthlyRate * 100).toFixed(2)}% M.V.)`;
 
@@ -103,6 +104,16 @@ export default function SimulatorForm() {
 
     setResult(total);
     setRateDescription(currentRateDesc);
+  };
+
+  // 👉 CTA: ir a onboarding
+  const handleOpenAccount = () => {
+    const principal = parseFloat(initialAmount.replace(/\D/g, ""));
+    const contribution = parseFloat(monthlyContribution.replace(/\D/g, "") || "0");
+
+    router.push(
+      `/onboarding?product=${productId}&amount=${principal}&months=${months}&contribution=${contribution}`
+    );
   };
 
   return (
@@ -173,13 +184,21 @@ export default function SimulatorForm() {
       {error && <p className="text-red-500 mt-2">{error}</p>}
 
       {result !== null && (
-        <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-600 rounded">
+        <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-600 rounded flex flex-col gap-3">
           <p className="font-semibold text-gray-800">
             Estimación total de tu ahorro: {formatCurrency(result)}
           </p>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-gray-600 text-sm">
             Basado en una tasa de interés {rateDescription}.
           </p>
+
+          {/* BOTÓN CTA CONEXIÓN A ONBOARDING*/}
+          <button
+            onClick={handleOpenAccount}
+            className="mt-2 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+          >
+            Quiero abrir esta cuenta
+          </button>
         </div>
       )}
     </div>
