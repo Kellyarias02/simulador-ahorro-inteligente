@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
       </p>
 
       <p className="mt-4 font-bold text-blue-900">
-        {product.rate}% EA
+        {product.interestRate}% EA
       </p>
 
       <Link

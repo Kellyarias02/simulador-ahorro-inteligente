@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import products from "@/data/products.json";
 
-// Función para formatear número como moneda con puntos
+// Formato moneda
 const formatCurrency = (value: number) => {
   return `$${value.toLocaleString("es-CO")}`;
 };
 
 export default function SimulatorForm() {
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("product");
+
+  // Buscar producto en el JSON
+  const product = products.find((p) => p.id === productId);
+
+  const interestRate = product?.interestRate ?? 5; // tasa por defecto
+  const productName = product?.name ?? "Ahorro digital";
+  const minAmount = product?.minAmount ?? 700000;
+
   const [initialAmount, setInitialAmount] = useState("");
   const [monthlyContribution, setMonthlyContribution] = useState("");
   const [months, setMonths] = useState("");
@@ -15,17 +27,16 @@ export default function SimulatorForm() {
   const [error, setError] = useState("");
   const [amountError, setAmountError] = useState("");
   const [contributionError, setContributionError] = useState("");
+  const [rateDescription, setRateDescription] = useState("");
 
-  // Función para actualizar el input con formato de moneda (solo números positivos y $)
   const handleCurrencyInput = (
     value: string,
     setter: (val: string) => void
   ) => {
-    const numericValue = value.replace(/\D/g, ""); // elimina todo excepto números
+    const numericValue = value.replace(/\D/g, "");
     setter(numericValue ? `$${numericValue}` : "");
   };
 
-  // Validación del monto inicial al salir del input
   const handleInitialBlur = () => {
     if (initialAmount === "") {
       setAmountError("No has escrito tu monto inicial.");
@@ -34,14 +45,13 @@ export default function SimulatorForm() {
     const numericValue = parseFloat(initialAmount.replace(/\D/g, ""));
     if (isNaN(numericValue)) {
       setAmountError("Ingrese un número válido.");
-    } else if (numericValue < 700000) {
-      setAmountError("El ahorro inicial debe ser al menos $700.000.");
+    } else if (numericValue < minAmount) {
+      setAmountError(`El ahorro inicial debe ser al menos ${formatCurrency(minAmount)}.`);
     } else {
       setAmountError("");
     }
   };
 
-  // Validación en tiempo real del aporte mensual (solo positivos)
   const handleContributionChange = (value: string) => {
     handleCurrencyInput(value, setMonthlyContribution);
     const numericValue = parseFloat(value.replace(/\D/g, ""));
@@ -72,8 +82,8 @@ export default function SimulatorForm() {
       return;
     }
 
-    if (principal < 700000) {
-      setError("El ahorro inicial debe ser al menos $700.000.");
+    if (principal < minAmount) {
+      setError(`El ahorro inicial debe ser al menos ${formatCurrency(minAmount)}.`);
       return;
     }
 
@@ -82,26 +92,32 @@ export default function SimulatorForm() {
       return;
     }
 
-    // Cálculo de interés compuesto mensual
-    const monthlyRate = 0.01; // 1% mensual simulado
+    // tasa mensual desde tasa anual
+    const monthlyRate = (interestRate / 100) / 12;
+    const currentRateDesc = `anual del ${interestRate}% (${(monthlyRate * 100).toFixed(2)}% M.V.)`;
+
     let total = principal;
     for (let i = 0; i < totalMonths; i++) {
       total = (total + contribution) * (1 + monthlyRate);
     }
 
     setResult(total);
+    setRateDescription(currentRateDesc);
   };
 
   return (
     <div className="flex flex-col gap-6 bg-white shadow-md p-6 rounded-md max-w-md mx-auto">
-      <h2 className="text-xl font-bold text-gray-800">Calcula tu ahorro digital</h2>
+      <h2 className="text-xl font-bold text-gray-800">
+        Calcula tu ahorro - {productName}
+      </h2>
+
       <p className="text-gray-600 text-sm">
-        Ingresa tu monto inicial, aportes mensuales y duración de tu ahorro para ver cuánto podría crecer.
+        Ingresa tu monto inicial, aportes mensuales y duración de tu ahorro.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="text-gray-700 font-medium">
-          ¿Cuál es su monto inicial? (mínimo $700.000)
+          ¿Cuál es su monto inicial? (mínimo {formatCurrency(minAmount)})
         </label>
         <input
           type="text"
@@ -115,7 +131,9 @@ export default function SimulatorForm() {
         />
         {amountError && <p className="text-red-500 text-sm">{amountError}</p>}
 
-        <label className="text-gray-700 font-medium">Selecciona el plazo de ahorro (meses)</label>
+        <label className="text-gray-700 font-medium">
+          Selecciona el plazo de ahorro (meses)
+        </label>
         <select
           value={months}
           onChange={(e) => setMonths(e.target.value)}
@@ -129,7 +147,9 @@ export default function SimulatorForm() {
           <option value="36">36 meses</option>
         </select>
 
-        <label className="text-gray-700 font-medium">¿Cuál es su aporte mensual?</label>
+        <label className="text-gray-700 font-medium">
+          ¿Cuál es su aporte mensual?
+        </label>
         <input
           type="text"
           placeholder="$0"
@@ -158,7 +178,7 @@ export default function SimulatorForm() {
             Estimación total de tu ahorro: {formatCurrency(result)}
           </p>
           <p className="text-gray-600 text-sm mt-1">
-            Basado en una tasa de interés mensual simulada del 1%.
+            Basado en una tasa de interés {rateDescription}.
           </p>
         </div>
       )}
