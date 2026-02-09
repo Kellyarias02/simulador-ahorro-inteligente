@@ -99,7 +99,6 @@ export default function OnboardingPage() {
   };
 
 
-
   return (
     <main className="min-h-screen bg-[#fcfcfc] flex justify-center items-center px-4 py-12">
       <div className="w-full max-w-xl bg-white shadow-md rounded-xl p-8 flex flex-col gap-6">
@@ -107,8 +106,9 @@ export default function OnboardingPage() {
         <h1 className="text-2xl font-bold text-[#1a3d6b]">
           ¡Empieza hoy a cumplir tu meta!
         </h1>
+        
 
-        {/* RESUMEN SIMULACIÓN */}
+        {/* RESUMEN DE LA SIMULACIÓN */}
         {(product || amount) && (
           <div className="bg-blue-50 border-l-4 border-[#06d1f3] p-4 rounded text-sm">
             <p className="font-semibold text-[#1a3d6b] mb-1">
@@ -235,7 +235,7 @@ export default function OnboardingPage() {
 
             <button
               type="submit"
-              className="bg-[#06d1f3] text-white py-2 rounded-lg font-semibold hover:bg-[#33acc8] transition"
+              className="bg-[#08a8c5] hover:bg-[#0799b0] text-white font-semibold py-2.5 px-6 rounded-lg transition shadow-sm hover:shadow-md mx-auto w-full sm:w-auto"
             >
               Enviar solicitud
             </button>

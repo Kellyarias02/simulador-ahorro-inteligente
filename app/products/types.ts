@@ -5,4 +5,5 @@ export interface Product {
   description: string;
   interestRate: number;
   minAmount: number;
+  image: string;
 }

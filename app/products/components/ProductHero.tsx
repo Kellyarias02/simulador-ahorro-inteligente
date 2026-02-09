@@ -1,6 +1,6 @@
 export function ProductHero() {
   return (
-    <section className="bg-blue-900 text-white py-12 px-6 text-center">
+    <section className="bg-[#d4e0f9] text-[#244672] py-12 px-6 text-center">
       <h1 className="text-3xl font-bold mb-2">
         Productos de ahorro
       </h1>

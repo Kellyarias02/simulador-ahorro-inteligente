@@ -2,49 +2,55 @@
   {
     "id": "flexible",
     "name": "Cuenta Ahorro Flexible",
-    "type": "tradicional",
+    "type": "Tradicional",
     "description": "Disponibilidad inmediata sin cuota de manejo.",
     "interestRate": 5.5,
-    "minAmount": 50000
+    "minAmount": 50000,
+    "image": "/images/flexible.jpg"
   },
   {
     "id": "programado",
     "name": "Cuenta Ahorro Programado",
-    "type": "programado",
+    "type": "Programado",
     "description": "Ahorra automáticamente cada mes para cumplir metas.",
     "interestRate": 7.2,
-    "minAmount": 100000
+    "minAmount": 100000,
+    "image": "/images/programado.jpg"
   },
   {
     "id": "premium",
     "name": "Cuenta Ahorro Premium",
-    "type": "premium",
+    "type": "Premium",
     "description": "Beneficios exclusivos y tasas preferenciales.",
     "interestRate": 8.1,
-    "minAmount": 300000
+    "minAmount": 300000,
+    "image": "/images/premium.jpg"
   },
   {
     "id": "joven",
     "name": "Cuenta Ahorro Joven",
-    "type": "especial",
+    "type": "Especial",
     "description": "Diseñada para jóvenes que empiezan a ahorrar.",
     "interestRate": 6.0,
-    "minAmount": 20000
+    "minAmount": 20000,
+    "image": "/images/joven.jpg"
   },
   {
     "id": "empresarial",
     "name": "Cuenta Ahorro Empresarial",
-    "type": "empresarial",
+    "type": "Empresarial",
     "description": "Optimiza el manejo del ahorro para empresas.",
     "interestRate": 7.8,
-    "minAmount": 500000
+    "minAmount": 500000,
+    "image": "/images/empresarial.jpg"
   },
   {
     "id": "vacaciones",
     "name": "Cuenta Ahorro Vacaciones",
-    "type": "objetivo",
+    "type": "Objetivo",
     "description": "Ahorra de forma planificada para tus viajes.",
     "interestRate": 6.7,
-    "minAmount": 80000
+    "minAmount": 80000,
+    "image": "/images/vacaciones.jpg"
   }
 ]

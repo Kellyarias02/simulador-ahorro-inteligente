@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import products from "@/data/products.json";
+import SimulationResultModal from "./SimulationResultModal";
 
 // Formato moneda
 const formatCurrency = (value: number) => {
@@ -14,13 +15,23 @@ export default function SimulatorForm() {
   const router = useRouter();
 
   const productId = searchParams.get("product");
-
-  // Buscar producto en el JSON
   const product = products.find((p) => p.id === productId);
 
-  const interestRate = product?.interestRate ?? 5;
-  const productName = product?.name ?? "Ahorro digital";
-  const minAmount = product?.minAmount ?? 700000;
+  // Si no hay producto, no se muestra el formulario
+  if (!product) {
+    return (
+      <div className="flex flex-col items-center justify-center bg-white shadow-md p-6 rounded-md max-w-md mx-auto">
+        <h2 className="text-xl font-bold text-gray-800 text-center">
+          Selecciona un producto para simular
+        </h2>
+        <p className="text-gray-600 text-sm mt-2 text-center">
+          Por favor vuelve a la sección de productos y elige uno para ver tu ahorro estimado.
+        </p>
+      </div>
+    );
+  }
+
+  const { name: productName, interestRate, minAmount } = product;
 
   const [initialAmount, setInitialAmount] = useState("");
   const [monthlyContribution, setMonthlyContribution] = useState("");
@@ -31,36 +42,48 @@ export default function SimulatorForm() {
   const [contributionError, setContributionError] = useState("");
   const [rateDescription, setRateDescription] = useState("");
 
-  const handleCurrencyInput = (
-    value: string,
-    setter: (val: string) => void
-  ) => {
+  const [showModal, setShowModal] = useState(false);
+
+  const handleCurrencyInput = (value: string, setter: (val: string) => void) => {
     const numericValue = value.replace(/\D/g, "");
     setter(numericValue ? `$${numericValue}` : "");
   };
 
+  // Validación del monto inicial
   const handleInitialBlur = () => {
     if (initialAmount === "") {
       setAmountError("No has escrito tu monto inicial.");
       return;
     }
+
     const numericValue = parseFloat(initialAmount.replace(/\D/g, ""));
+
     if (isNaN(numericValue)) {
       setAmountError("Ingrese un número válido.");
     } else if (numericValue < minAmount) {
-      setAmountError(`El ahorro inicial debe ser al menos ${formatCurrency(minAmount)}.`);
+      setAmountError(
+        `El ahorro inicial debe ser al menos ${formatCurrency(minAmount)}.`
+      );
     } else {
       setAmountError("");
     }
   };
 
+  // Validación del aporte mensual
   const handleContributionChange = (value: string) => {
-    handleCurrencyInput(value, setMonthlyContribution);
-    const numericValue = parseFloat(value.replace(/\D/g, ""));
+    const numericValue = value.replace(/\D/g, "");
+    setMonthlyContribution(numericValue ? `$${numericValue}` : "");
+
+    const contributionNumber = parseFloat(numericValue || "0");
+
     if (value === "") {
-      setContributionError("");
-    } else if (isNaN(numericValue) || numericValue < 0) {
-      setContributionError("Ingrese un número positivo.");
+      setContributionError(""); // vacío permitido
+    } else if (isNaN(contributionNumber)) {
+      setContributionError("Ingrese un número válido.");
+    } else if (contributionNumber < 0) {
+      setContributionError("El aporte mensual no puede ser negativo.");
+    } else if (contributionNumber < 10000) { // ejemplo mínimo aporte
+      setContributionError("El aporte mensual debe ser al menos $10.000.");
     } else {
       setContributionError("");
     }
@@ -94,7 +117,8 @@ export default function SimulatorForm() {
       return;
     }
 
-    const monthlyRate = (interestRate / 100) / 12;
+    // Cálculo de interés compuesto mensual
+    const monthlyRate = interestRate / 100 / 12;
     const currentRateDesc = `anual del ${interestRate}% (${(monthlyRate * 100).toFixed(2)}% M.V.)`;
 
     let total = principal;
@@ -104,9 +128,10 @@ export default function SimulatorForm() {
 
     setResult(total);
     setRateDescription(currentRateDesc);
+    setShowModal(true);
   };
 
-  // 👉 CTA: ir a onboarding
+  // Redirigir a onboarding - abrir cuenta
   const handleOpenAccount = () => {
     const principal = parseFloat(initialAmount.replace(/\D/g, ""));
     const contribution = parseFloat(monthlyContribution.replace(/\D/g, "") || "0");
@@ -117,90 +142,81 @@ export default function SimulatorForm() {
   };
 
   return (
-    <div className="flex flex-col gap-6 bg-white shadow-md p-6 rounded-md max-w-md mx-auto">
-      <h2 className="text-xl font-bold text-gray-800">
-        Calcula tu ahorro - {productName}
-      </h2>
+    <>
+      <div className="flex flex-col gap-6 bg-white shadow-md p-6 rounded-md max-w-md mx-auto">
+        <h2 className="text-xl font-bold text-gray-800">
+          Calcula tu ahorro - {productName}
+        </h2>
 
-      <p className="text-gray-600 text-sm">
-        Ingresa tu monto inicial, aportes mensuales y duración de tu ahorro.
-      </p>
+        <p className="text-gray-600 text-sm">
+          Ingresa tu monto inicial, aportes mensuales y duración de tu ahorro.
+        </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="text-gray-700 font-medium">
-          ¿Cuál es su monto inicial? (mínimo {formatCurrency(minAmount)})
-        </label>
-        <input
-          type="text"
-          placeholder="$0"
-          value={initialAmount}
-          onChange={(e) => handleCurrencyInput(e.target.value, setInitialAmount)}
-          onBlur={handleInitialBlur}
-          className={`border p-2 rounded focus:ring-2 focus:ring-blue-400 ${
-            amountError ? "border-red-500" : ""
-          }`}
-        />
-        {amountError && <p className="text-red-500 text-sm">{amountError}</p>}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-        <label className="text-gray-700 font-medium">
-          Selecciona el plazo de ahorro (meses)
-        </label>
-        <select
-          value={months}
-          onChange={(e) => setMonths(e.target.value)}
-          className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="">-- Selecciona un plazo --</option>
-          <option value="6">6 meses</option>
-          <option value="12">12 meses</option>
-          <option value="18">18 meses</option>
-          <option value="24">24 meses</option>
-          <option value="36">36 meses</option>
-        </select>
+          {/* MONTO INICIAL */}
+          <label className="text-gray-700 font-medium">
+            ¿Cuál es su monto inicial? (mínimo {formatCurrency(minAmount)})
+          </label>
+          <input
+            type="text"
+            placeholder="$0"
+            value={initialAmount}
+            onChange={(e) => handleCurrencyInput(e.target.value, setInitialAmount)}
+            onBlur={handleInitialBlur}
+            className={`border p-2 rounded focus:ring-2 focus:ring-blue-400 ${amountError ? "border-red-500" : ""}`}
+          />
+          {amountError && <p className="text-red-500 text-sm">{amountError}</p>}
 
-        <label className="text-gray-700 font-medium">
-          ¿Cuál es su aporte mensual?
-        </label>
-        <input
-          type="text"
-          placeholder="$0"
-          value={monthlyContribution}
-          onChange={(e) => handleContributionChange(e.target.value)}
-          className={`border p-2 rounded focus:ring-2 focus:ring-blue-400 ${
-            contributionError ? "border-red-500" : ""
-          }`}
-        />
-        {contributionError && <p className="text-red-500 text-sm">{contributionError}</p>}
-
-        <button
-          type="submit"
-          className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition font-semibold"
-          disabled={!!amountError || !!contributionError || !months}
-        >
-          Simular
-        </button>
-      </form>
-
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-
-      {result !== null && (
-        <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-600 rounded flex flex-col gap-3">
-          <p className="font-semibold text-gray-800">
-            Estimación total de tu ahorro: {formatCurrency(result)}
-          </p>
-          <p className="text-gray-600 text-sm">
-            Basado en una tasa de interés {rateDescription}.
-          </p>
-
-          {/* BOTÓN CTA CONEXIÓN A ONBOARDING*/}
-          <button
-            onClick={handleOpenAccount}
-            className="mt-2 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition"
+          {/* PLAZO */}
+          <label className="text-gray-700 font-medium">
+            Selecciona el plazo de ahorro (meses)
+          </label>
+          <select
+            value={months}
+            onChange={(e) => setMonths(e.target.value)}
+            className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
           >
-            Quiero abrir esta cuenta
+            <option value="">-- Selecciona un plazo --</option>
+            <option value="6">6 meses</option>
+            <option value="12">12 meses</option>
+            <option value="18">18 meses</option>
+            <option value="24">24 meses</option>
+            <option value="36">36 meses</option>
+          </select>
+
+          {/* APORTE MENSUAL */}
+          <label className="text-gray-700 font-medium">¿Cuál es su aporte mensual?</label>
+          <input
+            type="text"
+            placeholder="$0"
+            value={monthlyContribution}
+            onChange={(e) => handleContributionChange(e.target.value)}
+            className={`border p-2 rounded focus:ring-2 focus:ring-blue-400 ${contributionError ? "border-red-500" : ""}`}
+          />
+          {contributionError && <p className="text-red-500 text-sm">{contributionError}</p>}
+
+          <button
+            type="submit"
+            className="bg-[#244672] hover:bg-[#1d385a] text-white font-semibold py-2 px-4 rounded-lg transition"
+            disabled={!!amountError || !!contributionError || !months}
+          >
+            Simular
           </button>
-        </div>
-      )}
-    </div>
+        </form>
+
+        {error && <p className="text-red-500 mt-2">{error}</p>}
+      </div>
+
+      {/* MODAL */}
+      <SimulationResultModal
+        isOpen={showModal}
+        result={result}
+        rateDescription={rateDescription}
+        formatCurrency={formatCurrency}
+        onClose={() => setShowModal(false)}
+        onConfirm={handleOpenAccount}
+      />
+    </>
   );
 }
