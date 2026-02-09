@@ -1,36 +1,183 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Simulador del Ahorro Digital
 
-## Getting Started
+Aplicación web construida con **Next.js 14+** que permite descubrir productos financieros, simular rentabilidades y registrar intenciones de apertura.
 
-First, run the development server:
+## Características
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### 1. Descubrimiento de Productos Financieros (`/products`)
+- Listado de cuentas de ahorro (datos simulados en JSON local)
+- **Filtros en tiempo real** con debounce (500ms)
+- **ISR** (Incremental Static Regeneration) con revalidación cada 60 segundos
+
+### 2. Simulador de Rentabilidad (`/simulator`)
+- Formulario con monto inicial, aporte mensual y plazo
+- **Cálculo de interés compuesto** mensual
+- Validaciones en tiempo real
+- Formato de moneda (COP)
+- Modal con resultado de simulación
+
+### 3. Registro de Intención de Apertura (`/onboarding`)
+- Formulario con validación de campos
+- **reCAPTCHA simulado** (token = "OK")
+- Generación de UUID para código de solicitud
+- Visualización de resumen de simulación previa
+
+## 🏗️ Arquitectura
+
+```
+app/
+├── components/          # Componentes compartidos
+│   └── HomeHero.tsx    # Hero de la página principal
+├── onboarding/
+│   ├── page.tsx        # Página de registro (Client)
+│   └── components/
+│       └── OnboardingForm.tsx
+├── products/
+│   ├── page.tsx        # Listado con ISR
+│   ├── types.ts        # Tipos TypeScript
+│   └── components/
+│       ├── ProductCard.tsx      # Card de producto (Server)
+│       ├── ProductClient.tsx    # Filtros (Client)
+│       ├── ProductFilters.tsx   # Input búsqueda (Client)
+│       ├── ProductGrid.tsx      # Grid (Server)
+│       └── ProductHero.tsx      # Hero productos
+├── simulator/
+│   ├── page.tsx        # Página simulador (Client)
+│   └── components/
+│       ├── SimulatorForm.tsx           # Formulario (Client)
+│       └── SimulationResultModal.tsx   # Modal resultado
+└── layout.tsx          # Layout raíz (Server)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📊 Server vs Client Components
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Server Components (Renderizado en Servidor)
+- `app/layout.tsx` - Layout principal
+- `app/page.tsx` - Página de inicio
+- `app/products/page.tsx` - Listado con ISR
+- `app/components/HomeHero.tsx` - Hero estático
+- `app/products/components/ProductCard.tsx` - Card sin interactividad
+- `app/products/components/ProductGrid.tsx` - Renderizado de lista
+- `app/products/components/ProductHero.tsx` - Hero estático
+- `app/products/components/EmptyState.tsx` - Estado vacío
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Client Components (Interactividad en Navegador)
+- `app/simulator/page.tsx` - Necesita useState, Suspense
+- `app/simulator/components/SimulatorForm.tsx` - useState, useSearchParams
+- `app/simulator/components/SimulationResultModal.tsx` - Props y estados
+- `app/onboarding/page.tsx` - useState, useSearchParams
+- `app/products/components/ProductClient.tsx` - useState para filtros
+- `app/products/components/ProductFilters.tsx` - useState, useEffect (debounce)
 
-## Learn More
+##  ISR vs SSR
 
-To learn more about Next.js, take a look at the following resources:
+### Decisión: ISR (`revalidate = 60`)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**¿Por qué ISR en `/products`?**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Para la página de productos, decidí usar Incremental Static Regeneration (ISR) en lugar de SSR por las siguientes razones:
 
-## Deploy on Vercel
+Los productos financieros no cambian constantemente, por lo que no es necesario generar la página en cada solicitud.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+ISR permite entregar HTML pre-renderizado, lo que hace que la página cargue mucho más rápido para el usuario.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Al regenerar la página cada cierto tiempo (por ejemplo, cada 60 segundos), se reduce la carga en el servidor y las consultas frecuentes a la base de datos.
+
+Este intervalo de actualización es aceptable para productos que no requieren datos en tiempo real, equilibrando eficiencia y frescura de la información.
+
+En resumen: ISR combina velocidad, eficiencia y datos suficientemente actualizados para este caso.
+
+## 🧮 Fórmula de Interés Compuesto
+
+```
+Tasa mensual = Tasa anual / 100 / 12
+
+Para cada mes:
+Monto_final = (Monto_anterior + Aporte_mensual) * (1 + Tasa_mensual)
+```
+
+**Ejemplo:**
+- Monto inicial: $1,000,000
+- Aporte mensual: $100,000
+- Plazo: 12 meses
+- Tasa anual: 10%
+
+```
+Mes 1: (1,000,000 + 100,000) * (1 + 0.10/12) = $1,109,166
+Mes 12: Resultado final con intereses compuestos
+```
+
+## 🚀 Instalación
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/Kellyarias02/simulador-ahorro-inteligente.git
+
+# Entrar en la carpeta del proyecto
+cd simulador-ahorro-inteligente
+
+# Instalar dependencias
+npm install
+
+# Levantar el proyecto en modo desarrollo
+npm run dev
+
+# Build de producción
+npm run build
+
+# Iniciar producción
+npm start
+```
+
+## 🛠️ Tecnologías
+
+- **Next.js 14+** - Framework React con App Router
+- **TypeScript** - Tipado estático
+- **Tailwind CSS** - Estilos utilitarios
+- **React** - Librería UI
+- **Lucide React** - Iconos
+
+## 📁 Estructura de Datos
+
+```typescript
+interface Product {
+  id: string;
+  name: string;
+  type: 'programado' | 'flexible' | 'joven' | 'premium';
+  description: string;
+  interestRate: number; // Porcentaje EA
+  minAmount: number;
+  image: string;
+}
+```
+
+##  Diseño de Botones
+
+### Botones Primarios (CTAs - Simular/Conocer más)
+```css
+bg-[#244672] hover:bg-[#1d385a]
+```
+
+### Botones de Acción (Abrir Cuenta)
+```css
+bg-[#08a8c5] hover:bg-[#0799b0] t
+```
+
+
+## Licencia
+
+Este proyecto fue desarrollado como parte de un desafío técnico.
+
+## Mejoras futuras
+
+Microservicio Backend (NestJS):
+Actualmente los productos se obtienen desde un JSON local (products.json).
+En una versión futura, se planea reemplazarlo por un microservicio que provea los productos dinámicamente, permitiendo:
+
+Escalabilidad y actualización en tiempo real de tasas de interés y productos.
+
+Integración con bases de datos y APIs externas.
+
+Consumo desde el frontend vía fetch.
+
+Esta decisión fue intencional: se priorizó que la funcionalidad principal del simulador, las validaciones y la experiencia de usuario estuvieran completas. La integración con un backend dinámico es un próximo paso estratégico, mostrando capacidad de escalabilidad y visión de arquitectura.
